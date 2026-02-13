@@ -63,10 +63,10 @@ volumes:
 ```
 
 ## 📝 Best Practices Learned
-    - Use @task over operators when data needs to pass between tasks
-    - Use hooks when dealing with external systems (like databases or APIs)
-    - Prefer extending Docker images for additional Python packages rather than customizing base images
-    - Avoid pushing large data to XComs — use files or DB instead
+  - Use @task over operators when data needs to pass between tasks
+  - Use hooks when dealing with external systems (like databases or APIs)
+  - Prefer extending Docker images for additional Python packages rather than customizing base images
+  - Avoid pushing large data to XComs — use files or DB instead
 
 ## 📂 Project Structure
 ```bash
