@@ -1,0 +1,79 @@
+Airflow Practical Tips & Best Practices Checklist:
+
+1. DAG & Task Design
+   - Prefer @task (TaskFlow API) over PythonOperator if you want to pass data between tasks easily (XComs handled automatically).
+   - Use operators when you just need to run something without returning values.
+   - multiple_outputs=True if your task returns more than one value.
+   - Always set catchup=False for beginners to avoid unexpected backfill runs.
+
+
+2. Working with External Systems
+   - Use Hooks when interacting with databases, APIs, or cloud services; they handle connections & auth.
+     Example: PostgresHook for Postgres queries instead of manually opening connections.
+   - Consider using DBeaver.
+   - For databases:
+     - Ensure connection in Airflow UI (Admin > Connections) matches your hook conn_id.
+     - Test queries in DBeaver or another client first.
+     - Avoid schema changes or duplicate primary keys after DAG deployment.
+
+
+3. Data Passing & Communication
+   - XComs: small data (~48–52 KB) between tasks.
+   - For bigger data, write to files / cloud storage instead of pushing through XComs.
+   - @task returns = XComs automatically → simplifies chaining.
+
+
+4. Operators vs Bash / Python
+   - BashOperator → shell commands, CLI scripts, simple tasks.
+   - PythonOperator → ETL, business logic, debugging-friendly.
+   - Tip: If your DAG needs to return data → TaskFlow API is better.
+
+
+5. Extending Airflow
+   - Extend Docker image for new Python packages instead of customizing base image.
+   - Use requirements.txt for Python packages only in order of dependency like least to most dependent on other packages.
+   - Create a "Dockerfile" inside project folder and type (make sure it's the same version of Airflow as in compose.yaml file):
+FROM apache/airflow:3.1.6
+COPY requirements.txt /requirements.txt
+RUN pip install --no-cache-dir -r /requirements.txt
+
+   - Change the airflow image name in docker-compose.yaml from:
+   image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:3.1.6}
+   to:
+   image: ${AIRFLOW_IMAGE_NAME:-extending_airflow:latest}
+
+   - Build, then restart Airflow services:
+docker build . --tag extending_airflow:latest
+docker-compose up -d --no-deps --build airflow-apiserver airflow-scheduler
+docker-compose up -d
+
+6. File Handling in Docker + WSL (in case saving files from outside to local environment "I don't mean database like postgres instead like txt csv in my windows project")
+   - Mount a volume to save files persistently:
+volumes:
+  - ./data:/opt/airflow/data
+
+if you get permission issues try:
+docker ps
+locate the CONTAINER_ID for Worker, then:
+docker exec -it CONTAINER_ID mkdir -p /opt/airflow/data
+Note: CONTAINER_ID changes after every Airflow start.
+
+   - Deleting a file from Windows also deletes it in the container (one volume).
+
+7. Scheduling & Backfills
+   - Catchup = automatic run of missed DAG intervals.
+   - Backfill = manual re-run of historical intervals:
+docker exec -it CONTAINER_ID bash
+airflow dags backfill -s START_DATE -e END_DATE DAG_ID
+
+   - Use TriggerDagRunOperator to trigger a DAG when an external event occurs.
+
+8. Logging & Debugging
+   - Prefer logging.info() over Bash prints inside Python tasks.
+   - Logs can be viewed via the Airflow UI.
+
+9. Quick Safety Tips
+   - Always test queries before using them in DAGs.
+   - Avoid overwriting files unintentionally (use unique filenames per run).
+   - Avoid pushing large datasets into XComs.
+   - Use auto-increment IDs in DB tables to prevent primary key violations.

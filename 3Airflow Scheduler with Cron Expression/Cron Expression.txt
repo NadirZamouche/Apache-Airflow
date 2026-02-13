@@ -1,0 +1,25 @@
+cron expression:
+┌───────── minute (0–59)
+│ ┌──────── hour (0–23)
+│ │ ┌──────── day of month (1–31)
+│ │ │ ┌──────── month (1–12)
+│ │ │ │ ┌──────── day of week (0–6) (Sun–Sat)
+│ │ │ │ │
+* *  * * *
+
+Common symbols explained:
+| Symbol | Meaning         | Example                     |
+| ------ | --------------- | --------------------------- |
+| `*`    | every value     | `* * * * *` → every minute  |
+| `*/n`  | every n units   | `*/5 * * * *` → every 5 min |
+| `a,b`  | specific values | `0,30 * * * *`              |
+| `a-b`  | range           | `9-17 * * * *`              |
+
+Practical examples:
+| Goal                  | Cron             |
+| --------------------- | ---------------- |
+| Every minute          | `* * * * *`      |
+| Every 2 minutes       | `*/2 * * * *`    |
+| Every day at 16:00    | `0 16 * * *`     |
+| Every weekday at 9    | `0 9 * * 1-5`    |
+| Every 2 minutes, 8–18 | `*/2 8-18 * * *` |

@@ -1,0 +1,33 @@
+To install Apache Airflow on Windwos I need: Docker & WSL (Windows Subsystem for Linux) since Airflow is designed to run on Linux (or macOS)
+Also I need Python which I already have.
+
+1. Installing Docker & WSL:
+   - Check Windows version: Win + R > winver (mine is windows 11)
+   - Install WSL, in cmd type wsl to check if you already have it, if not then: wsl --install (set username & password) to disable the daily login
+message: touch ~/.hushlogin
+   - Check WSL version: wsl --version
+   - Turn on windows subsystem for linux: win search > Turn Windows features on or off > check Windows Subsystem for Linux > OK > Don't restart.
+   - Check if vertualization is enabled: Ctrl Shift escape (this opens the task manager) > go to performance tab and check if vertualization is enabled
+(for me it is if not enable it).
+   - Install Docker Desktop for Windows: https://www.docker.com/products/docker-desktop/ ; check add shortcut to desktop > OK and restart.
+   - Launch Docker, accept the terms and conditions, then skip and wait for docker engine to start & done.
+   - Final check in cmd: docker --version and docker run hello-world
+
+2. Installing Aiflow:
+   - Donwload the airflow docker compose file from: https://airflow.apache.org/docs/apache-airflow/3.1.6/docker-compose.yaml, then put it in a project folder.
+   - Manually create a .env file and paste this (note the exact airflow version can be found in the compose file):
+AIRFLOW_IMAGE_NAME=apache/airflow:3.1.6
+AIRFLOW_UID=50000
+   - Change the value of AIRFLOW__CORE__LOAD_EXAMPLES: 'true' from: 'true' to 'false'.
+   - Spin up the docker engine.
+   - check docker-compose.yaml file: image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:3.1.6}
+   - In the project terminal: docker-compose up airflow-init
+   - then: docker-compose up -d, wait until it's done.
+   - Finallly: localhost:8080, username: airflow & password: airflow (default BTW).
+   - To turn it down: docker-compose down.
+     Or to remove the exmaple logs & DAGs:
+     (-v: to delete the DAGs that came with docker-compose.yaml file): docker-compose down -v.
+
+-----------------------------------------------------------------------------------------------------------------------------------------------
+
+💡 Tip (PySpark + Airflow): PySpark + Airflow in the same container almost never works with the minimal Airflow Docker images. So each one has to have its own container.

@@ -1,0 +1,26 @@
+1. What is it? SQLExecuteQueryOperator is an Airflow operator that lets you run SQL queries as a task inside a DAG. Use it when you want to:
+   - run SELECT, INSERT, UPDATE, DELETE
+   - create tables / schemas
+   - run DDL & DML statements
+   - interact with databases via Airflow connections (Postgres, MySQL, etc.)
+
+2. Library: from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
+
+3. Operator function (important args)
+SQLExecuteQueryOperator(
+    task_id="task_name",
+    conn_id="your_connection_id",
+    sql="your SQL query here",
+)
+
+Key arguments
+task_id → unique task name
+conn_id → Airflow connection ID (e.g. postgres_default)
+sql → SQL query or path to .sql file
+
+4. Example
+task1 = SQLExecuteQueryOperator(
+    task_id="first_task",
+    conn_id="postgres_default",
+    sql="SELECT * FROM dag_runs;"
+)

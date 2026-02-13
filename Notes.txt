@@ -1,0 +1,136 @@
+- If you want to start running a DAG at a specific day u need to set the start date the day before.
+- catchup=False,  # beginner friendly to prevent the scheduler from trying to "catch up" on all the past DAG runs that were missed (by default it's = True).
+- Once saved the DAG file, toggle the DAG on in the Airflow UI, once done testing or finished the project toggle it back off again.
+
+Bash- vs PythonOperator:
+| Feature         | BashOperator       | PythonOperator   |
+| --------------- | ------------------ | ---------------- |
+| Runs            | Shell commands     | Python functions |
+| Best for        | CLI tools, scripts | ETL & logic      |
+| Complexity      | Simple             | Flexible         |
+| Debugging       | Harder             | Easier           |
+| Maintainability | Medium             | High             |
+
+PythonOperator
+- op_kwargs = operator keyword arguments, it’s a dictionary used to pass named arguments into the Python function (python_callable) that the PythonOperator runs.
+- XComs: XCom = Cross-Communication.
+  * one task pushes a small piece of data → another task pulls it later.
+  * To access all ur XComs: Airflow UI > Browse > XComs.
+  * An XCom value is limited to ~48–52 KB, that means never use XComs to share large data like pandas dataframes otherwise it will crash.
+  * In code we use ti.xcom_push & ti.xcom_pull functions between tasks, example:
+    def get_name(ti):
+        ti.xcom_push(key="first_name", value="Tino")
+        ti.xcom_push(key="last_name", value="Chrupalla")
+
+    def begrüßung(ti):
+        first_name = ti.xcom_pull(task_ids="get_name", key="first_name")
+        last_name = ti.xcom_pull(task_ids="get_name", key="last_name")
+        print(f"Herr {first_name} {last_name} Herzlich Willkommen!")
+
+  Note: both functions must take in ti as a parameter.
+
+TaskFlow API: use it instead of the previous operators, since TaskFlow API is built on top of XComs. That means every @task return value = an XCom automatically.
+Use: multiple_outputs=True inside the task returning more than one value (multiple parametres)
+
+
+- Catchup is a scheduler behavior: it determines whether a scheduling system should automatically create and execute all missed runs between a defined start_date and the current time when the system starts or the workflow is enabled.
+- Backfill is a manual execution strategy: it is the explicit re-execution of a workflow for past time intervals, usually to populate missing data, recompute results, or correct historical errors. To test:
+  - Type: docker ps ; to open the docker scheduler container.
+  - then: docker exec -it CONTAINER_ID bash airflow@CONTAINER_ID:/opt/airflow$ airflow dags backfill -s START_DATE -e END_DATE DAG_ID
+    Note: CONTAINER_ID is found in docker scheduler container the one having 8080/tcp not 0.0.0.0! and DAG_ID in code you want to execute.
+
+| Concept  | Automatic? | Triggered by    | Purpose                      |
+| -------- | ---------- | --------------- | ---------------------------- |
+| Catchup  | Yes        | Scheduler       | Don’t miss scheduled periods |
+| Backfill | No         | Human / command | Reprocess history            |
+
+- Admin > Connections > Add Connection > fill in the credentials.
+
+SQLExecuteQueryOperator:
+* Expose the port: within the docker-compose.yaml: file servieces > postgres add:
+ports:
+- 5432:5432
+then:
+docker compose up -d --no-deps --build postgres
+
+* Install this open-source software: DBeaver, then in DBeaver: Database > New Databse Connection > select PostgreSQL > Next > leave everything by default, set both the username and password to airflow, check the bow of "Show all Databases" > Test Connection to verify it and download the necessary requirements once Connection is set ur done > Finish.
+Note: in Window > click on Database Navigator to see all established connections.
+Finally create a new database from the connection and call it "test".
+
+* Create a connection from Airflow UI: Admin > Connections > Add Connection > fill in the credentials:
+Connectio ID: postgres_localhost
+Connection Type: Postgres
+Standard Fields
+Host: host.docker.internal
+Login: airflow
+Port: 5432
+Database: Database_name
+
+* Create a SQLExecuteQueryOperator dag with:
+task = SQLExecuteQueryOperator(
+        task_id="create_table",
+        conn_id="postgres_localhost", # same as the one from the UI
+        sql="""
+            SQL_Query
+        """
+    )
+
+Note: Best practices:
+- Watchout for primary key violation (duplicates IDs) and chaning schemas otherwise the job would fail. threefore:
+1. Use auto-increment IDs to avoid duplicates.
+2. Avoid changing schemas after DAGs are deployed, or handle migrations carefully.
+
+- Operator vs @task: Use @task if you want to return data to pass between tasks (XComs) otherwise Operator.
+Note: when using taskflow API u either use operators or @task, if u use none of them just a custom function it won't be seen as a task.
+
+Extending vs Customising:
+- 99% of the time use extending instead of cutomising the docker image when adding python packages.
+
+Note: dependecies or requirements.txt only take in python packages and u should also sort in terms of which package depends/relies on which under.
+
+Idea: if an data in an API changes we can use an event watcher like cron which then triggers an Airflow DAG using TriggerDagRunOperator.
+
+PostgresHook:
+In Airflow, hooks are interfaces to external systems or services (like databases, cloud storage, or APIs) that allow tasks to interact with them. They handle the connection details, authentication, and basic operations, so your DAGs don’t need to manage these manually.
+
+1. Set the image name back to: image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:3.1.6}
+2. Launch DBeaver > use the previously established connection > Databases > right-click on test and set it as default.
+3. create table:
+create table if not exists public.orders (
+order_id VARCHAR,
+date DATE,
+product_name VARCHAR,
+quantity INT,
+primary key (order_id)
+)
+
+4. import data from orders.csv file in data folder to DBeaver test order table (changed 6 records dates to my current date) and check with for example:
+select * from orders limit 100
+
+5. Build ur DAG with a PostgresHook.
+Note: postgres_conn_if has to match the one from Airflow UI.
+
+6. Instead of BashOperator, we can use logging like this:
+import logging
+
+logging.info("Saved orders data in text file: %s", f"../data/Orders_{ds_nodash}.txt")
+
+7. File directory:
+Final note (saving files in Dcoker Airflow WSL):
+7.1. since I am in windows I had to create this:
+docker ps
+locate the CONTAINER_ID for Worker, then:
+docker exec -it a8848b2b78ec mkdir -p /opt/airflow/data
+Note: CONTAINER_ID changes after every Airflow start.
+
+7.2. In Docker-compose.yaml (to see the files saved in docker):
+volumes:
+  - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
+  - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
+  - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
+  - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+  - ${AIRFLOW_PROJ_DIR:-.}/data:/opt/airflow/data   # <-- ADD THIS LINE
+
+Some delete commands:
+docker exec -it 4f1faa4e7125 rm -f /opt/airflow/data/Orders_2026-02-12.txt
+Note: deleteing the file from either (windows project folder or Worker's Container) will delete it from all 2 at once, because this is only ONE file, not 2.

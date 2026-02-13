@@ -1,0 +1,30 @@
+1. What is it? PythonOperator is an Airflow operator that lets you run Python functions as a task inside a DAG. Use it when you want to:
+   - execute Python logic
+   - process data
+   - call APIs
+   - work with libraries (pandas, requests, etc.)
+   - apply business rules (if/else, loops)
+
+2. Library: from airflow.operators.python import PythonOperator
+
+3. Operator function (important args)
+PythonOperator(
+    task_id="task_name",
+    python_callable=your_python_function,
+    op_args=[],
+    op_kwargs={},
+)
+
+Key arguments
+task_id → unique task name
+python_callable → the Python function to execute
+op_args → positional arguments (list)
+op_kwargs → keyword arguments (dict)
+
+4. Example
+def begrüßung(name):
+    print(f"Herr {name} Herzlich Willkommen!")
+
+task = PythonOperator(
+    task_id="Begrüßung", python_callable=begrüßung, op_kwargs={"name": "Chrupalla"}
+)

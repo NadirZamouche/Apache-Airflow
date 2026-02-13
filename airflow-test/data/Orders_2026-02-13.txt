@@ -1,0 +1,6 @@
+order_id,date,product_name,quantity
+811-64-5910,2026-02-13,Rice - Basmati,22
+180-11-0541,2026-02-13,"Apple - Delicious, Golden",67
+146-85-9195,2026-02-13,"Wine - White, Schroder And Schyl",69
+544-02-3061,2026-02-13,Eggplant Italian,97
+512-10-7471,2026-02-13,Potatoes - Mini White 3 Oz,1

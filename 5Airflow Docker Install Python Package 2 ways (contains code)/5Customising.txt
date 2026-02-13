@@ -1,0 +1,18 @@
+Note: customising Airflow in Windows with Docker + WSL abstractions seems to be very challenging and tricky, I tried and stuck in step 5.
+The steps below would 100% work in a Linux OS (as they did in the tutorial)
+
+To do customising we need to build it using Airflow source code:
+
+1. in project terminal: cd ..
+2. then: pwd
+3. Go to the official Airflow, repository and clone it (copy URL), then paste it in project cmd: git clone https://github.com/apache/airflow.git
+4. Once done, open a new VS Code window, get in the installed Airflow folder and copy paste the requirements.txt file in the docker-context-files.
+5. in cmd: docker build . --build-arg AIRFLOW_VERSION='3.1.6' --tag customising_airflow:latest
+6. Change the airflow image name in docker-compose.yaml from the previous window:
+   image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:3.1.6}
+OR WHATEVER to:
+   image: ${AIRFLOW_IMAGE_NAME:-customising_airflow:latest}
+7. Finally:
+docker-compose up -d --no-deps --build airflow-apiserver airflow-scheduler
+docker-compose up -d
+and the same DAGs to check dependencies that worked in "extending" method would run here "customising".

@@ -1,0 +1,15 @@
+1. What is it? BashOperator is an Airflow operator that lets you run shell (bash) commands as a task inside a DAG. Use it when you want to:
+   - run Linux commands (echo, cp, rm, curl, psql, etc.)
+   - call scripts (.sh)
+   - glue tools together without Python logic
+
+2. Library: from airflow.operators.bash import BashOperator
+
+3. Operator function (important args)
+BashOperator(
+    task_id="task_name",
+    bash_command="your bash command here",
+)
+
+4. Example:
+task1 = BashOperator(task_id="first_task", bash_command="echo Task Force 1")
