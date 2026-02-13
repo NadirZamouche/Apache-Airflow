@@ -59,8 +59,6 @@ To test and run the Airflow DAGs, ensure you have the following installed:
 
 ```yaml
 volumes:
-  - ./dags:/opt/airflow/dags
-  - ./logs:/opt/airflow/logs
   - ./data:/opt/airflow/data
 ```
 
